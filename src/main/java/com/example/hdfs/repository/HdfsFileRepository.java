@@ -2,7 +2,8 @@ package com.example.hdfs.repository;
 
 import com.example.hdfs.domain.HdfsFile;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.repository.CrudRepository;
+
+import java.util.List;
 
 /**
  * @author zly
@@ -10,4 +11,11 @@ import org.springframework.data.repository.CrudRepository;
 
 public interface HdfsFileRepository extends JpaRepository<HdfsFile,Integer> {
 
+    public void  deleteByTitle(String title);
+
+    /**
+     * @param title
+     * @return
+     */
+    public List<HdfsFile> findByTitle(String title);
 }

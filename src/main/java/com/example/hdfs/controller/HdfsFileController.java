@@ -1,6 +1,9 @@
 package com.example.hdfs.controller;
+
+import com.example.hdfs.config.HdfsConfig;
 import com.example.hdfs.domain.HdfsFile;
 import com.example.hdfs.repository.HdfsFileRepository;
+import com.example.hdfs.util.HdfsUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -12,18 +15,26 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.transaction.Transactional;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 /**
  * @author zly
  */
 
 @RestController
+//@CrossOrigin(origins = "*",allowCredentials="true",allowedHeaders = "",methods = {})
 public class HdfsFileController {
     @Autowired
     private HdfsFileRepository hdfsFileRepository;
@@ -32,41 +43,89 @@ public class HdfsFileController {
      * 查询数据库中的所有
      * @return
      */
-    @GetMapping(value = "/filelist")
-    public List<HdfsFile> getHdfsFileList(){
-        return hdfsFileRepository.findAll();
+    @PostMapping(value = "/filelist")
+    public List<HdfsFile> getHdfsFileList(HttpServletRequest request){
+        System.out.println(request.getParameter("count"));
+        List<HdfsFile> hdfsFiles = hdfsFileRepository.findAll();
+        for(int i=0; i<hdfsFiles.size(); i++){
+            hdfsFiles.get(i).setKey( String.valueOf(i+1));
+        }
+        return hdfsFiles;
+    }
+
+    @PostMapping(value = "/testupload")
+    //上传视频到hdfs的接口，不修改文件名称，以便存入数据库的接口找到文件存储
+    //在hdfs中的目录
+    //@CrossOrigin(origins = "*",allowCredentials="true",allowedHeaders = "",methods = {})
+    public boolean uploadHdfsFile(@RequestParam(value = "files") MultipartFile files) throws IOException {
+        Map<String,Object> map = new HashMap<>();
+        String dateName=null;
+        String destination = null;
+        String fileName = null;
+        if (files.isEmpty()) {
+            System.out.println("文件传输失败\n");
+            return false;
+        }
+        else {
+            fileName = files.getOriginalFilename();
+//            DateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");
+//            Calendar calendar = Calendar.getInstance();
+//            //存储文件的名字
+//            System.out.println("输出上传文件的名称");
+//            System.out.println(fileName);
+//            dateName = df.format(calendar.getTime())+files.getOriginalFilename();
+        }
+        String[] funcName = fileName.split("\\.");
+        String fileType = "mp4";
+        if(funcName[1].equals(fileType)){
+            destination = "/user/data/video/"+fileName;
+        }
+        else{
+            destination = "/user/data/text/"+fileName;
+        }
+        System.out.println(destination);
+        InputStream in = files.getInputStream();
+        HdfsConfig config = new HdfsConfig("172.17.201.196", "9000","hadoop");
+        HdfsUtil.upload(config,in, destination);
+        return true;
     }
 
     /**
      上传文件，不过这个并没有真正的上传文件
      */
-    @PostMapping(value = "/uploadfile")
-    public HdfsFile addHdfsFile(@RequestParam("filename") String filename, @RequestParam("type") String type,@RequestParam("subDescription") String subDescription,@RequestParam("title") String title,@RequestParam("cover") String cover){
-        //HdfsConfig config = new HdfsConfig("172.17.201.196", "9000","hadoop");
-        //String source = filename; //这个需要绝对路径
-        //之后的filename值需要最后的文件名，要改！！！
+    //@PostMapping(value = "/uploadfile")
+    @RequestMapping(value="/uploadfile", method=RequestMethod.GET)
+    //{title: "test1", filename: "test.mp4", subDescription: "abc", cover: "https://gw.alipayobjects.com/zos/rmsportal/uMfMFlvUuceEyPpotzlq.png"}
+    public HdfsFile addHdfsFile( HttpServletRequest request){
+        String title = request.getParameter("title");
+        String filename = request.getParameter("filename");
+        String subDescription = request.getParameter("subDescription");
+        String cover = request.getParameter("cover");
+        String type = request.getParameter("type");
         HdfsFile file=new HdfsFile();
-        String type1 = "video";
-        String type2 = "text";
-        if(type1.equals(type)) {
+        String[] fileNames = filename.split("\\.");
+
+        String type1 = "mp4";
+        if(type1.equals(fileNames[1])) {
            file.setHref("/user/data/video/"+filename);
         }
-        else if(type2.equals(type)){
-            file.setHref("/user/data/text/"+filename);
-        }
         else {
-            file.setHref("/user/data/files/"+filename);
+            file.setHref("/user/data/text/"+filename);
         }
         //上传文件到hadoop
         //String destination = file.getFilename()+filename;
         //HdfsUtil.upload(config,source,destination);
+        System.out.println("输出type");
+        System.out.println(type);
         file.setType(type);
         file.setTitle(title);
         file.setCover(cover);
+        file.setFilename(filename);
         file.setSubDescription(subDescription);
         Date date = new Date();
         SimpleDateFormat dateFormat= new SimpleDateFormat("yyyy-MM-dd :hh:mm:ss");
         Date date1 = null;
+        file.setCreatedAt(dateFormat.format(date));
         try {
             date1 = dateFormat.parse(dateFormat.format(date));
         } catch (ParseException e) {
@@ -74,15 +133,27 @@ public class HdfsFileController {
         }
         long ts = date1.getTime();
         file.setUpdatedAt(ts);
-        file.setCreatedAt(ts);
+
         return hdfsFileRepository.save(file);
     }
 
     //这个地方如果不清楚id,那得通过其他的param进行查询后获取id，这个是前端搭建需要注意的
-        @DeleteMapping(value = "/deletefile")
-        public void deleteFile(@RequestParam(value = "id") Integer id){
-                hdfsFileRepository.deleteById(id);
-             }
+    @GetMapping(value = "/deletefile")
+    //在数据库中设置文件名不重复
+    //alter table hdfs_file add constraint unique_filename unique(filename);
+    @Transactional
+    public ResponseEntity<Object> deleteFile(@RequestParam(value = "title") String title){
+                //hdfsFileRepository.deleteById(id);
+        //删除hdfs中文件的代码，还没有测试
+        List<HdfsFile> hdfsFiles = hdfsFileRepository.findByTitle(title);
+        String filePath = hdfsFiles.get(0).getHref();
+        HdfsConfig config = new HdfsConfig("172.17.201.196", "9000","hadoop");
+        HdfsUtil.delete(config,filePath);
+        hdfsFileRepository.deleteByTitle(title);
+        HttpHeaders headers = new HttpHeaders();
+        return new ResponseEntity<Object>("ok", headers, HttpStatus.OK);
+    }
+
 
     @GetMapping(value = "/play")
     public ResponseEntity<Object> playVideo(@RequestHeader(value = "Range",required = false) String range, @RequestParam(value = "fpath",required = false) String fpath) throws IOException {
@@ -153,4 +224,50 @@ public class HdfsFileController {
             }
         }
     }
+
+    @GetMapping(value = "/downloadfile")
+    public ResponseEntity<Object> downloadFiles(@RequestHeader(value = "Range",required = false) String range, @RequestParam(value = "title",required = false) String title) throws IOException {
+        HttpHeaders headers = new HttpHeaders();
+        //String fpath = null;
+        List<HdfsFile> hdfsFiles = hdfsFileRepository.findByTitle(title);
+        String fpath = hdfsFiles.get(0).getHref();
+        //headers.add("Custom-Header", "foo");
+        if (fpath==null) {
+            return new ResponseEntity<Object>("please set fpath", headers, HttpStatus.OK);
+        }
+
+        String filename="hdfs://"+"172.17.201.196"+":"+"9000"+fpath;
+        //String filename="hdfs://"+"39.96.93.7"+":"+"9000"+fpath;
+        Configuration config=new Configuration();
+        FileSystem fs = null;
+        FSDataInputStream in=null;
+        try {
+            fs = FileSystem.get(URI.create(filename),config);
+            in=fs.open(new Path(filename));
+            //return new ResponseEntity<Object>("please set fpath", headers, HttpStatus.OK);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        final long fileLen = fs.getFileStatus(new Path(filename)).getLen();
+        headers.add("Content-type", "video/mp4");
+
+        //resp.setHeader("Content-type","video/mp4");
+        //OutputStream out=resp.getOutputStream();
+        //直接访问这个链接就是下载，stream通常用来文件传输的
+        if(range==null)
+        {
+            filename=fpath.substring(fpath.lastIndexOf("/")+1);
+            InputStreamResource inputStreamResource = new InputStreamResource(in);
+            headers.setContentLength((int)fileLen);
+            headers.add("Content-Disposition", "attachment; filename="+filename);
+            headers.setContentType(MediaType.valueOf("application/octet-stream"));
+
+            return new ResponseEntity<Object>(inputStreamResource, headers, HttpStatus.OK);
+        }
+        else{
+            return new ResponseEntity<Object>("download fail", headers, HttpStatus.OK);
+        }
+
+    }
+
 }

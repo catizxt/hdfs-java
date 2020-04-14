@@ -53,6 +53,26 @@ public class HdfsFile {
 
     private String cover;
 
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    private String key;
+
+    public String getFilename() {
+        return filename;
+    }
+
+    public void setFilename(String filename) {
+        this.filename = filename;
+    }
+
+    private  String filename;
+
     public String getType() {
         return type;
     }
@@ -64,15 +84,15 @@ public class HdfsFile {
     private  String type;
 
 
-    public long getCreatedAt() {
+    public String getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(long createdAt) {
+    public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
     }
 
-    private long createdAt;
+    private String createdAt;
 
     public String getSubDescription() {
         return subDescription;

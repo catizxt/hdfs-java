@@ -1,19 +1,17 @@
 package com.example.hdfs.util;
 
-import java.io.FileInputStream;
+import com.example.hdfs.config.HdfsConfig;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IOUtils;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IOUtils;
-
-import com.example.hdfs.config.HdfsConfig;
 
 public class HdfsUtil {
 
@@ -22,18 +20,18 @@ public class HdfsUtil {
 	 * @Title: upload @Description: 文件上传 @param: @param config @param: @param
 	 * source @param: @param destination @return: void @throws
 	 */
-	public static void upload(HdfsConfig config, String source, String destination) {
+	public static void upload(HdfsConfig config, InputStream  input, String destination) {
 
 		try {
 			// 获得FileSystem对象，指定使用root用户上传
 			FileSystem fileSystem = FileSystem.get(new URI(getHdfsUrl(config)), new Configuration(),
 					config.getUsername());
 			// 创建输入流，参数指定文件输出地址
-			InputStream in = new FileInputStream(source);
-			// 调用create方法指定文件上传，参数HDFS上传路径
+			//InputStream in = new FileInputStream(source);
+            // 调用create方法指定文件上传，参数HDFS上传路径
 			OutputStream out = fileSystem.create(new Path(destination));
 			// 使用Hadoop提供的IOUtils，将in的内容copy到out，设置buffSize大小，是否关闭流设置true
-			IOUtils.copyBytes(in, out, 4096, true);
+			IOUtils.copyBytes(input, out, 4096, true);
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
