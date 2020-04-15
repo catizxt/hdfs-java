@@ -73,7 +73,35 @@ public class HdfsUtil {
 		}
 	}
 
-	/**
+    public static String downloadString(HdfsConfig config, String source) {
+        try {
+            // 获得FileSystem对象，指定使用root用户上传
+            FileSystem fileSystem = FileSystem.get(new URI(getHdfsUrl(config)), new Configuration(),
+                    config.getUsername());
+            // 调用open方法进行下载，参数HDFS路径
+            InputStream input = fileSystem.open(new Path(source));
+            // 创建输出流，参数指定文件输出地址
+            StringBuffer out = new StringBuffer();
+            byte[] b = new byte[4096];
+            for (int n; (n = input.read(b)) != -1;) {
+                out.append(new String(b, 0, n));
+            }
+            return out.toString();
+
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (URISyntaxException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return "false";
+    }
+
+    /**
 	 *
 	 * @Title: delete @Description: 文件删除 @param: @param config @param: @param
 	 * target @param: @return @return: boolean @throws

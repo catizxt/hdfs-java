@@ -73,6 +73,16 @@ public class HdfsFile {
 
     private  String filename;
 
+    public String getFiletype() {
+        return filetype;
+    }
+
+    public void setFiletype(String filetype) {
+        this.filetype = filetype;
+    }
+
+    private String filetype;
+
     public String getType() {
         return type;
     }

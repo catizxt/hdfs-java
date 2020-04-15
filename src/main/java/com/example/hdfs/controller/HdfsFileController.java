@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.transaction.Transactional;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -47,6 +48,26 @@ public class HdfsFileController {
     public List<HdfsFile> getHdfsFileList(HttpServletRequest request){
         System.out.println(request.getParameter("count"));
         List<HdfsFile> hdfsFiles = hdfsFileRepository.findAll();
+        for(int i=0; i<hdfsFiles.size(); i++){
+            hdfsFiles.get(i).setKey( String.valueOf(i+1));
+        }
+        return hdfsFiles;
+    }
+
+    @GetMapping(value = "/videofilelist")
+    public List<HdfsFile> getHdfsVideoFileList(HttpServletRequest request){
+        System.out.println(request.getParameter("count"));
+        List<HdfsFile> hdfsFiles = hdfsFileRepository.findByFiletype(request.getParameter("filetype"));
+        for(int i=0; i<hdfsFiles.size(); i++){
+            hdfsFiles.get(i).setKey( String.valueOf(i+1));
+        }
+        return hdfsFiles;
+    }
+
+    @GetMapping(value = "/textfilelist")
+    public List<HdfsFile> getHdfsTextFileList(HttpServletRequest request){
+        System.out.println(request.getParameter("count"));
+        List<HdfsFile> hdfsFiles = hdfsFileRepository.findByFiletype(request.getParameter("filetype"));
         for(int i=0; i<hdfsFiles.size(); i++){
             hdfsFiles.get(i).setKey( String.valueOf(i+1));
         }
@@ -94,23 +115,25 @@ public class HdfsFileController {
      上传文件，不过这个并没有真正的上传文件
      */
     //@PostMapping(value = "/uploadfile")
-    @RequestMapping(value="/uploadfile", method=RequestMethod.GET)
+    @RequestMapping(value="/uploadfile", method=RequestMethod.POST)
     //{title: "test1", filename: "test.mp4", subDescription: "abc", cover: "https://gw.alipayobjects.com/zos/rmsportal/uMfMFlvUuceEyPpotzlq.png"}
-    public HdfsFile addHdfsFile( HttpServletRequest request){
-        String title = request.getParameter("title");
-        String filename = request.getParameter("filename");
-        String subDescription = request.getParameter("subDescription");
-        String cover = request.getParameter("cover");
-        String type = request.getParameter("type");
+    public HdfsFile addHdfsFile(@RequestBody Map<String,String> maplist){
+        String title = maplist.get("title");
+        String filename = maplist.get("filename");
+        String subDescription = maplist.get("subDescription");
+        String cover = maplist.get("cover");
+        String type =maplist.get("type");
+        String data = maplist.get("data");
         HdfsFile file=new HdfsFile();
         String[] fileNames = filename.split("\\.");
-
         String type1 = "mp4";
         if(type1.equals(fileNames[1])) {
            file.setHref("/user/data/video/"+filename);
+           file.setFiletype("video");
         }
         else {
             file.setHref("/user/data/text/"+filename);
+            file.setFiletype("text");
         }
         //上传文件到hadoop
         //String destination = file.getFilename()+filename;
@@ -134,6 +157,14 @@ public class HdfsFileController {
         long ts = date1.getTime();
         file.setUpdatedAt(ts);
 
+        //存储进hdfs
+        if(data!=null){
+            System.out.println("保存富文本文件");
+            InputStream inputStrem = new ByteArrayInputStream(data.getBytes());
+            String destination = file.getHref();
+            HdfsConfig config = new HdfsConfig("172.17.201.196", "9000","hadoop");
+            HdfsUtil.upload(config,inputStrem, destination);
+        }
         return hdfsFileRepository.save(file);
     }
 
@@ -154,6 +185,13 @@ public class HdfsFileController {
         return new ResponseEntity<Object>("ok", headers, HttpStatus.OK);
     }
 
+    @GetMapping(value = "/textreader")
+    public String textReader(HttpServletRequest request)  {
+        String href = request.getParameter("href");
+        HdfsConfig config = new HdfsConfig("172.17.201.196", "9000","hadoop");
+        String data=HdfsUtil.downloadString(config,href);
+        return data;
+    }
 
     @GetMapping(value = "/play")
     public ResponseEntity<Object> playVideo(@RequestHeader(value = "Range",required = false) String range, @RequestParam(value = "fpath",required = false) String fpath) throws IOException {
