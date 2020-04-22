@@ -44,7 +44,7 @@ public class DockerController {
         CreateDocker createDocker = new CreateDocker();
 
         DockerFile dockerFile = new DockerFile();
-        dockerFile.setUser(email);
+        dockerFile.setEmail(email);
         dockerFile.setType(type);
         Date date = new Date();
         SimpleDateFormat dateFormat= new SimpleDateFormat("yyyy-MM-dd :hh:mm:ss");
