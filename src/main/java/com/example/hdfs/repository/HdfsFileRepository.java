@@ -19,5 +19,6 @@ public interface HdfsFileRepository extends JpaRepository<HdfsFile,Integer> {
      */
     public List<HdfsFile> findByTitle(String title);
     public List<HdfsFile> findByFiletype(String filetype);
+    public List<HdfsFile> findByType(String type);
 
 }

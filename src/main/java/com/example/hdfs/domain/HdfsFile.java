@@ -125,7 +125,5 @@ public class HdfsFile {
         this.id = id;
     }
 
-
-
     //后缀fpath，因为api就是那一个，hadoop的地址是在java函数中
 }

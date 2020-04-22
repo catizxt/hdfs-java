@@ -64,6 +64,16 @@ public class HdfsFileController {
         return hdfsFiles;
     }
 
+    @GetMapping(value = "/dockerfilelist")
+    public List<HdfsFile> getHdfsDockerFileList(HttpServletRequest request){
+        System.out.println(request.getParameter("count"));
+        List<HdfsFile> hdfsFiles = hdfsFileRepository.findByType("docker");
+        for(int i=0; i<hdfsFiles.size(); i++){
+            hdfsFiles.get(i).setKey( String.valueOf(i+1));
+        }
+        return hdfsFiles;
+    }
+
     @GetMapping(value = "/textfilelist")
     public List<HdfsFile> getHdfsTextFileList(HttpServletRequest request){
         System.out.println(request.getParameter("count"));
@@ -74,11 +84,11 @@ public class HdfsFileController {
         return hdfsFiles;
     }
 
-    @PostMapping(value = "/testupload")
+    @PostMapping(value = "/uploadtohdfs")
     //上传视频到hdfs的接口，不修改文件名称，以便存入数据库的接口找到文件存储
     //在hdfs中的目录
     //@CrossOrigin(origins = "*",allowCredentials="true",allowedHeaders = "",methods = {})
-    public boolean uploadHdfsFile(@RequestParam(value = "files") MultipartFile files) throws IOException {
+    public boolean uploadHdfsFile(@RequestParam(value = "files") MultipartFile files) {
         Map<String,Object> map = new HashMap<>();
         String dateName=null;
         String destination = null;
@@ -105,7 +115,14 @@ public class HdfsFileController {
             destination = "/user/data/text/"+fileName;
         }
         System.out.println(destination);
-        InputStream in = files.getInputStream();
+        System.out.println("没有收到前端转发请求");
+        InputStream in = null;
+        try {
+            in = files.getInputStream();
+        } catch (IOException e) {
+            System.out.println("异常");
+            e.printStackTrace();
+        }
         HdfsConfig config = new HdfsConfig("172.17.201.196", "9000","hadoop");
         HdfsUtil.upload(config,in, destination);
         return true;
@@ -117,6 +134,7 @@ public class HdfsFileController {
     //@PostMapping(value = "/uploadfile")
     @RequestMapping(value="/uploadfile", method=RequestMethod.POST)
     //{title: "test1", filename: "test.mp4", subDescription: "abc", cover: "https://gw.alipayobjects.com/zos/rmsportal/uMfMFlvUuceEyPpotzlq.png"}
+    //这个地方需要改一下，前端传来的参数必须是带后缀的，但是后端要处理一下，把后缀去掉
     public HdfsFile addHdfsFile(@RequestBody Map<String,String> maplist){
         String title = maplist.get("title");
         String filename = maplist.get("filename");
