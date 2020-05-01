@@ -1,15 +1,16 @@
 package com.example.hdfs.util;
 
 import com.example.hdfs.domain.JwtBody;
+import com.example.hdfs.domain.JwtReponse;
+import com.example.hdfs.domain.Userinfo;
+import com.google.gson.Gson;
 import com.google.protobuf.ByteString;
 import com.ibm.etcd.api.RangeResponse;
 import com.ibm.etcd.client.EtcdClient;
 import com.ibm.etcd.client.KvStoreClient;
 import com.ibm.etcd.client.kv.KvClient;
 import net.sf.json.JSONObject;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
+import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
@@ -24,6 +25,27 @@ import java.util.*;
 public class JwtUtil {
 
 //https://github.com/IBM/etcd-java/blob/master/src/test/java/com/ibm/etcd/client/KvTest.java
+    public Userinfo JwtValidate(String token){
+        Map<String, List<String>> results=getEtcd();
+        String ip = loadCall("validateToken",results);
+        String strBody=callJwt(ip,token);
+        JwtReponse a = new JwtReponse();
+        Gson gson=new Gson();
+        JwtReponse jwtResponse =  gson.fromJson(strBody,a.getClass());
+
+        int code = jwtResponse.getCode();
+        if(code == 0){
+            String info = jwtResponse.getData().get(0);
+            Userinfo userinfo = new Userinfo();
+            userinfo = gson.fromJson(info,userinfo.getClass());
+            return userinfo;
+        }
+        else{
+            String msg = jwtResponse.getMsg();
+        }
+        return null;
+    }
+
     public Map<String, List<String>> getEtcd(){
         Map<String, List<String>> keyValue = new HashMap<String, List<String>>();
         String[] jsonString = {"jsonString"};
@@ -66,7 +88,7 @@ public class JwtUtil {
         return ip;
     }
 
-    public String callJwt(String ip){
+    public String callJwt(String ip,String token){
         String url = "http://"+ip;
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
@@ -74,7 +96,8 @@ public class JwtUtil {
         JwtBody jwtBody = new JwtBody();
         jwtBody.setMethod("validateToken");
         List<String> args =new ArrayList<String>();
-        args.add("eyJUeXAiOiJKV1QiLCJBbGciOiJIUzI1NiIsIkN0eSI6IiJ9.eyJSb2xlIjoiQWRtaW4iLCJVc2VybmFtZSI6ImpvaG4iLCJleHAiOjE1ODU0OTE1MTMsImlhdCI6MTU4NTQ5MTUxMn0.02tsHatS8O36OxIGtOwvy0_CRlGkv95gOVgOuZQeC5w");
+        args.add(token);
+        //args.add("eyJUeXAiOiJKV1QiLCJBbGciOiJIUzI1NiIsIkN0eSI6IiJ9.eyJSb2xlIjoiQWRtaW4iLCJVc2VybmFtZSI6ImpvaG4iLCJleHAiOjE1ODU0OTE1MTMsImlhdCI6MTU4NTQ5MTUxMn0.02tsHatS8O36OxIGtOwvy0_CRlGkv95gOVgOuZQeC5w");
         //Map<String,List<String>> argsMap= new HashMap<String,List<String>>();
         //argsMap.put("args",args);
         jwtBody.setArgs(args);

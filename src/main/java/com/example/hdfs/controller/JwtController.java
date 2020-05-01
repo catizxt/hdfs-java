@@ -22,8 +22,8 @@ public class JwtController {
         Map<String, List<String>> results=jwt.getEtcd();
         String ip = jwt.loadCall("validateToken",results);
         //{test_1=[172.17.201.199:9092], validateToken=[172.17.201.199:9092]}
-
-        String strBody=jwt.callJwt(ip);
+        String token = "123";
+        String strBody=jwt.callJwt(ip,token);
         JwtReponse a = new JwtReponse();
         Gson gson=new Gson();
         JwtReponse jwtResponse =  gson.fromJson(strBody,a.getClass());

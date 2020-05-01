@@ -20,6 +20,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+//https://www.cnblogs.com/smallSevens/p/8874213.html
+//开线程池控制并发数
+
 @RestController
 @RequestMapping("/docker")
 public class DockerController {

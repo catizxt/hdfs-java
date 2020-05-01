@@ -183,6 +183,7 @@ public class HdfsFileController {
             HdfsConfig config = new HdfsConfig("172.17.201.196", "9000","hadoop");
             HdfsUtil.upload(config,inputStrem, destination);
         }
+        //这个返回值需要修改
         return hdfsFileRepository.save(file);
     }
 
