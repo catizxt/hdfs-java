@@ -49,7 +49,7 @@ public class JwtUtil {
     public Map<String, List<String>> getEtcd(){
         Map<String, List<String>> keyValue = new HashMap<String, List<String>>();
         String[] jsonString = {"jsonString"};
-        KvStoreClient client = EtcdClient.forEndpoint("172.17.201.199", 2379).withPlainText().build();
+        KvStoreClient client = EtcdClient.forEndpoint("172.17.201.196", 2379).withPlainText().build();
         KvClient kvClient = client.getKvClient();
         RangeResponse result = kvClient.get(ByteString.copyFromUtf8("jwt/")).asPrefix().sync();
         int keyNum = result.getKvsCount();
