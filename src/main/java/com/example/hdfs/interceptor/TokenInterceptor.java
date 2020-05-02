@@ -119,8 +119,8 @@ public class TokenInterceptor implements HandlerInterceptor {
                 Date currentTime = new Date();
                 String now = dateFormat.format(currentTime);
                 //开始时间小于结束时间
-                System.out.println(infos[2]);
-                System.out.println(endTime);
+                //System.out.println(infos[2]);
+                //System.out.println(endTime);
                 return endTime.compareTo(now) >= 0;
                 //时间戳，验证时间戳
             }
