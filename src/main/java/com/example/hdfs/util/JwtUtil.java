@@ -10,7 +10,9 @@ import com.ibm.etcd.client.EtcdClient;
 import com.ibm.etcd.client.KvStoreClient;
 import com.ibm.etcd.client.kv.KvClient;
 import net.sf.json.JSONObject;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
@@ -29,6 +31,7 @@ public class JwtUtil {
         Map<String, List<String>> results=getEtcd();
         String ip = loadCall("validateToken",results);
         String strBody=callJwt(ip,token);
+
         JwtReponse a = new JwtReponse();
         Gson gson=new Gson();
         JwtReponse jwtResponse =  gson.fromJson(strBody,a.getClass());
@@ -75,6 +78,7 @@ public class JwtUtil {
           }
           //格式：keyValue['test_1']=list('ip1','ip2')
       }
+        System.out.println(keyValue);
       return keyValue;
     }
 
@@ -92,7 +96,7 @@ public class JwtUtil {
         String url = "http://"+ip;
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
-
+     //curl -d '{"method":"validateToken","args":["eyJUeXAiOiJKV1QiLCJBbGciOiJIUzI1NiIsIkN0eSI6IiJ9.eyJSb2xlIjoiQWRtaW4iLCJVc2VybmFtZSI6ImpvaG4iLCJleHAiOjE1ODU0OTE1MTMsImlhdCI6MTU4NTQ5MTUxMn0.02tsHatS8O36OxIGtOwvy0_CRlGkv95gOVgOuZQeC5w"]}' http://172.17.201.199:9092
         JwtBody jwtBody = new JwtBody();
         jwtBody.setMethod("validateToken");
         List<String> args =new ArrayList<String>();

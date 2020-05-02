@@ -52,7 +52,7 @@ public class DockerController {
         Date date = new Date();
         SimpleDateFormat dateFormat= new SimpleDateFormat("yyyy-MM-dd :hh:mm:ss");
         dockerFile.setCreatedAt(dateFormat.format(date));
-
+        //调用函数即可
         //String result = null;
         try {
             createDocker.setEmail(email);

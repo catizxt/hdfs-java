@@ -118,10 +118,17 @@ public class TokenInterceptor implements HandlerInterceptor {
                 // String date = sdf.format(new Date(Integer.parseInt(str_num) * 1000L));
                 Date currentTime = new Date();
                 String now = dateFormat.format(currentTime);
+                Date dateend =  dateFormat.parse(endTime);
+                Date datenow = dateFormat.parse(now);
+                //时间比较上用字符串比较有问题
+                //System.out.println(dateend);
+                //System.out.println(datenow);
+
                 //开始时间小于结束时间
                 //System.out.println(infos[2]);
                 //System.out.println(endTime);
-                return endTime.compareTo(now) >= 0;
+                return dateend.getTime() >= datenow.getTime();
+                //return endTime.compareTo(now) >= 0;
                 //时间戳，验证时间戳
             }
             //return true;
