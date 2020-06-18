@@ -1,6 +1,5 @@
 package com.example.hdfs.interceptor;
 
-
 //https://blog.csdn.net/weixin_42863267/article/details/102976901
 //https://blog.csdn.net/weixin_43820012/article/details/90608536
 
@@ -22,6 +21,7 @@ import java.io.PrintWriter;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 //import javax.xml.transform.Result;
 
@@ -36,9 +36,9 @@ public class TokenInterceptor implements HandlerInterceptor {
      * 忽略拦截的url
      */
     private String urls[] = {
+            "/uploadtohdfs",
+            "/play"
     };
-
-    //private JwtUtil jwtUtil;
 
 
     /**
@@ -57,8 +57,32 @@ public class TokenInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Object o) throws Exception {
         String url = httpServletRequest.getRequestURI();
-        String token = httpServletRequest.getHeader("token");
+        for (String item : this.urls){
+            if (item.equals(url)){
+                return true;
+            }
+        }
 
+        //String token = httpServletRequest.getHeader("token");
+        String zlyToken = httpServletRequest.getHeader("Cookie");
+
+        int index = zlyToken.indexOf("zly_token");
+        if(index==-1){
+            return false;
+        }
+        int index2 = zlyToken.indexOf(";",index);
+        if(index2!=-1){
+            zlyToken = zlyToken.substring(index+10,index2);
+        }
+        else{
+            zlyToken = zlyToken.substring(index+10);
+        }
+        System.out.println("输出zlytoken的index");
+        System.out.println(zlyToken);
+        //zlyToken=zlyToken.substring(index+10,zlyToken.indexOf(";",index));
+        String token = null;
+        token = zlyToken;
+        //token = httpServletRequest.getHeader("token");
         //这个之后在某个API中试一下，看返回的是什么
         //获得其中的
         String method = httpServletRequest.getMethod();
@@ -67,14 +91,12 @@ public class TokenInterceptor implements HandlerInterceptor {
             logger.info(token);
             logger.info(url);
             logger.info(method);
-            System.out.println("输出token");
-            System.out.println(token);
-            // 遍历需要忽略拦截的路径
-            for (String item : this.urls){
-                if (item.equals(url)){
-                    return true;
-                }
+
+            if(token == null){
+                return false;
             }
+            // 遍历需要忽略拦截的路径
+
             // 查询验证token
             JwtUtil jwt = new JwtUtil();
             Userinfo userinfo = new Userinfo();
@@ -107,7 +129,9 @@ public class TokenInterceptor implements HandlerInterceptor {
             }
             else {
                 String[] infos = userinfo.getUserinfo().split(",");
-                SimpleDateFormat dateFormat= new SimpleDateFormat("yyyy-MM-dd :hh:mm:ss");
+                SimpleDateFormat dateFormat= new SimpleDateFormat("yyyy-MM-dd :HH:mm:ss");
+                dateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
+                //dateFormat.setTimeZone(TimeZone.getTimeZone("CST"));
                 long time = Long.parseLong(infos[2]);
                 //System.out.println(infos[2]);
                 //System.out.println(time);
@@ -121,8 +145,9 @@ public class TokenInterceptor implements HandlerInterceptor {
                 Date dateend =  dateFormat.parse(endTime);
                 Date datenow = dateFormat.parse(now);
                 //时间比较上用字符串比较有问题
-                //System.out.println(dateend);
-                //System.out.println(datenow);
+                System.out.println(dateend);
+                System.out.println(datenow);
+                //System.out.println(time);
 
                 //开始时间小于结束时间
                 //System.out.println(infos[2]);

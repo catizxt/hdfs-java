@@ -9,13 +9,17 @@ import com.ibm.etcd.api.RangeResponse;
 import com.ibm.etcd.client.EtcdClient;
 import com.ibm.etcd.client.KvStoreClient;
 import com.ibm.etcd.client.kv.KvClient;
+import com.ibm.etcd.client.kv.WatchUpdate;
 import net.sf.json.JSONObject;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -49,11 +53,12 @@ public class JwtUtil {
         return null;
     }
 
-    public Map<String, List<String>> getEtcd(){
+    public Map<String, List<String>> getEtcd() {
         Map<String, List<String>> keyValue = new HashMap<String, List<String>>();
         String[] jsonString = {"jsonString"};
         KvStoreClient client = EtcdClient.forEndpoint("172.17.201.196", 2379).withPlainText().build();
         KvClient kvClient = client.getKvClient();
+
         RangeResponse result = kvClient.get(ByteString.copyFromUtf8("jwt/")).asPrefix().sync();
         int keyNum = result.getKvsCount();
         for(int i=0; i<keyNum; i++)
@@ -78,8 +83,21 @@ public class JwtUtil {
           }
           //格式：keyValue['test_1']=list('ip1','ip2')
       }
+        try {
+            client.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         System.out.println(keyValue);
       return keyValue;
+    }
+
+    WatchUpdate getNextSkipEmpty(BlockingQueue<Object> watchEvents) throws InterruptedException {
+        WatchUpdate wu = (WatchUpdate) watchEvents.poll(500, TimeUnit.MILLISECONDS);
+        if (wu.getEvents().isEmpty()) {
+            wu = (WatchUpdate) watchEvents.poll(500, TimeUnit.MILLISECONDS);
+        }
+        return wu;
     }
 
     //随机获取调用的ip，在客户端实现负载均衡

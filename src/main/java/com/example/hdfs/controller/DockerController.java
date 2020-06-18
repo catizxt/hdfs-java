@@ -1,9 +1,7 @@
 package com.example.hdfs.controller;
 
-import com.example.hdfs.domain.CreateDocker;
 import com.example.hdfs.domain.DockerFile;
 import com.example.hdfs.repository.DockerFileRepository;
-import com.example.hdfs.util.dockerThread;
 import com.example.hdfs.util.dockerUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -14,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -44,27 +43,36 @@ public class DockerController {
         String email = maplist.get("email");
         String type = maplist.get("type");
         HttpHeaders headers = new HttpHeaders();
-        CreateDocker createDocker = new CreateDocker();
-
         DockerFile dockerFile = new DockerFile();
         dockerFile.setEmail(email);
         dockerFile.setType(type);
         Date date = new Date();
         SimpleDateFormat dateFormat= new SimpleDateFormat("yyyy-MM-dd :hh:mm:ss");
         dockerFile.setCreatedAt(dateFormat.format(date));
-        //调用函数即可
-        //String result = null;
-        try {
-            createDocker.setEmail(email);
-            createDocker.setType(type);
-            Thread thread = new dockerThread(createDocker);
-            thread.start();
-            thread.join(); //等待子进程结束
-            System.out.println(createDocker.getUrls());
-            dockerFile.setUrl(createDocker.getUrls().get(0));
-            dockerFileRepository.save(dockerFile);
-            return new ResponseEntity<Object>(createDocker.getUrls(), headers, HttpStatus.OK);
 
+        String result = null;
+        try {
+            File file = new File("/data/cloud-lab/create_dockerfile");
+            //this.type要经过处理
+
+            String commandJudge = "/bin/bash docker_num";
+
+            result = dockerUtil.execCmd(commandJudge,file);
+            result = result.replace("\n","");
+            //System.out.println(result);
+            if(Integer.parseInt(result)>10){
+                return new ResponseEntity<Object>("false", headers, HttpStatus.OK);
+            }
+            System.out.println(result);
+            String commandCreate = "/bin/bash " + type;
+
+            result= dockerUtil.execCmd(commandCreate,file);
+            System.out.println(result);
+            List<String> urls = new ArrayList<String>();
+            urls=dockerUtil.parseUrl(result);
+            dockerFile.setUrl(urls.get(0));
+            dockerFileRepository.save(dockerFile);
+            return new ResponseEntity<Object>(urls, headers, HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();
         }

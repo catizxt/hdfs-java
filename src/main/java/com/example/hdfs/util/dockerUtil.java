@@ -28,9 +28,8 @@ public class dockerUtil {
         BufferedReader bufrError = null;
 
         try {
-            // 执行命令, 返回一个子进程对象（命令在子进程中执行）
             process = Runtime.getRuntime().exec(cmd, null, dir);
-
+            //https://www.cnblogs.com/fclbky/p/6112180.html
             // 方法阻塞, 等待命令执行完成（成功会返回0）
             process.waitFor();
 
@@ -46,7 +45,6 @@ public class dockerUtil {
             while ((line = bufrError.readLine()) != null) {
                 result.append(line).append('\n');
             }
-
         } finally {
             closeStream(bufrIn);
             closeStream(bufrError);

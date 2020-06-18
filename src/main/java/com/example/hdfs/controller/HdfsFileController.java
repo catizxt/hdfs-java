@@ -8,6 +8,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -39,7 +41,7 @@ import java.util.Map;
 public class HdfsFileController {
     @Autowired
     private HdfsFileRepository hdfsFileRepository;
-
+    Logger logger = LoggerFactory.getLogger(HdfsFileController.class);
     /**
      * 查询数据库中的所有
      * @return
@@ -47,6 +49,7 @@ public class HdfsFileController {
     @PostMapping(value = "/filelist")
     public List<HdfsFile> getHdfsFileList(HttpServletRequest request){
         System.out.println(request.getParameter("count"));
+        logger.info("打印log信息");
         List<HdfsFile> hdfsFiles = hdfsFileRepository.findAll();
         for(int i=0; i<hdfsFiles.size(); i++){
             hdfsFiles.get(i).setKey( String.valueOf(i+1));
